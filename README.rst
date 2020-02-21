@@ -7,18 +7,22 @@ After deploy helps you to create and manage automated deploy tasks in your Djang
 Quick start
 -----------
 
-1. Add "after_deploy" to your INSTALLED_APPS setting like this::
+1. Install the package using pip by running::
+
+    pip install django-after-deploy
+
+2. Add "after_deploy" to your INSTALLED_APPS setting like this::
 
     INSTALLED_APPS = [
         ...
         'after_deploy',
     ]
 
-2. Now after_deploy commands are available, use install flag::
+3. Now after_deploy commands are available, use install flag::
 
     python manage.py after_deploy --install
 
-3. Run `python manage.py -g my_first_task` to create your first task, they'll stay at root project, on tasks folder::
+4. Run `python manage.py -g my_first_task` to create your first task, they'll stay at root project, on tasks folder::
 
     my-project
     |-- my-app
@@ -31,7 +35,7 @@ Quick start
     |   |-- _000001_my_first_task.py
     |-- manage.py
 
-4. For execute all unapplied tasks you can run `python manage.py --run`. If you need execute again a specfic task, you can run `python manage.py -r my_first_task`.
+5. For execute all unapplied tasks you can run `python manage.py --run`. If you need execute again a specfic task, you can run `python manage.py -r my_first_task`.
 
 Authors
 -------
