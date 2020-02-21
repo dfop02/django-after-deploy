@@ -2,7 +2,7 @@
 After Deploy
 ============
 
-After deploy helps you to create and manage automated deploy tasks in your Django application. Inspired by [Rails after_party](https://github.com/theSteveMitchell/after_party).
+After deploy helps you to create and manage automated deploy tasks in your Django application. Inspired by `Rails after_party`_
 
 Quick start
 -----------
@@ -22,7 +22,7 @@ Quick start
 
     python manage.py after_deploy --install
 
-4. Run `python manage.py -g my_first_task` to create your first task, they'll stay at root project, on tasks folder::
+4. Run ``python manage.py -g my_first_task`` to create your first task, they'll stay at root project, on tasks folder::
 
     my-project
     |-- my-app
@@ -35,9 +35,12 @@ Quick start
     |   |-- _000001_my_first_task.py
     |-- manage.py
 
-5. For execute all unapplied tasks you can run `python manage.py --run`. If you need execute again a specfic task, you can run `python manage.py -r my_first_task`.
+5. For execute all unapplied tasks you can run ``python manage.py --run``. If you need execute again a specfic task, you can run ``python manage.py -r my_first_task``.
 
 Authors
 -------
 
-[Diogo Fernandes](https://github.com/dfop02)
+- `Diogo Fernandes`_
+
+.. _Rails after_party: https://github.com/theSteveMitchell/after_party.
+.. _Diogo Fernandes: https://github.com/dfop02
