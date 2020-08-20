@@ -42,5 +42,10 @@ Authors
 
 - `Diogo Fernandes`_
 
+Contribute
+----------
+
+If you find an issue with AfterDeploy please log an issue. I will accept pull requests.
+
 .. _Rails after_party: https://github.com/theSteveMitchell/after_party.
 .. _Diogo Fernandes: https://github.com/dfop02

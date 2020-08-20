@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.utils.timezone import now
 from after_deploy.models import tasks as taskModel
 from after_deploy import get_version
-import os, sys, pathlib, importlib
+import os, sys, pathlib, importlib, traceback
 
 ROOT = os.path.abspath(os.getcwd())
 
@@ -27,6 +27,8 @@ if not tasks.objects.filter(pk='%(task_code)s'):
 """
 
 class MyMigrationMaker(makeMigrationsCommand):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @no_translations
     def handle(self, *tasks, **kwargs):
@@ -40,20 +42,7 @@ class MyMigrationMaker(makeMigrationsCommand):
         items['imports'] = 'from after_deploy.models import tasks\nfrom django.db import connection'
 
         for task_name in in_tasks:
-            last_code_on_db   = taskModel.objects.all().order_by('-pk').first()
-            last_code         = None
-            (_, _, filenames) = next(os.walk(f'{ROOT}/tasks/'))
-
-            if len(filenames) > 1:
-                last_code = max(list(set([int(fn.split('_')[1]) for fn in sorted(filenames) if fn.split('_')[1]])))
-
-            if last_code:
-                new_code = str(last_code + 1)
-            elif last_code_on_db:
-                new_code = str(int(last_code_on_db.code) + 1)
-            else:
-                new_code = '1'
-            task_code = self.convert_code(new_code)
+            task_code = now().strftime('%Y%m%d%H%M%S')
             items['task_code'] = task_code
             task_string = TEMPLATE % items
             with open(f'{ROOT}/tasks/_{task_code}_{task_name}.py', 'w', encoding='utf-8') as fh:
@@ -61,11 +50,11 @@ class MyMigrationMaker(makeMigrationsCommand):
             if self.verbosity >= 1:
                 self.stdout.write(self.style.SUCCESS(f'After Deploy generated task: {task_name}.'))
 
-    def convert_code(self, code, max_number=999999):
-        return f"{(len(str(max_number))-len(code)) * '0'}{code}"
-
 class Command(BaseCommand):
     help = 'Install after-deploy on Django application, Generate new tasks and run tasks.'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def add_arguments(self, parser):
         parser.add_argument('--install', action='store_true', help='Install after deploy',)
@@ -73,16 +62,20 @@ class Command(BaseCommand):
         parser.add_argument('-r', '--run', action='store_true', help='Run all unapplied tasks or select tasks',)
         parser.add_argument('tasks', nargs='*', type=str, help='Tasks names to generate or run.',)
 
+    def get_version(self):
+        return f'AfterDeploy version {str(get_version())}'
+
     def handle(self, *args, **kwargs):
-        install  = kwargs['install']
-        generate = kwargs['generate']
-        run      = kwargs['run']
-        tasks    = kwargs['tasks']
+        install   = kwargs['install']
+        generate  = kwargs['generate']
+        run       = kwargs['run']
+        tasks     = kwargs['tasks']
+        traceback = kwargs['traceback']
 
         if install:
             try:
                 os.chdir(ROOT)
-                print('Installing django-after-deploy on your app...')
+                self.stdout.write('Installing django-after-deploy on your app...')
                 call_command('makemigrations', 'after_deploy', verbosity=0, interactive=False)
                 call_command('migrate',        'after_deploy', verbosity=0, interactive=False)
 
@@ -110,18 +103,24 @@ class Command(BaseCommand):
             if tasks:
                 for task in tasks:
                     current_task_name = [s for s in filenames if task in s][0].replace('.py', '')
-                    self.execute_task(current_task_name)
+                    self.execute_task(current_task_name, traceback)
             else:
                 for dir_task in all_dir_tasks:
                     if not dir_task in all_db_tasks:
                         current_task_name = [s for s in filenames if dir_task in s][0].replace('.py', '')
-                        self.execute_task(current_task_name)
+                        self.execute_task(current_task_name, traceback)
 
-    def execute_task(self, task_name):
+    def execute_task(self, task_name, enable_traceback=None):
         try:
             importlib.import_module(f'tasks.{task_name}')
             self.stdout.write(self.style.SUCCESS(f'Task {task_name} successfully executed.'))
         except ImportError as error:
-            self.stdout.write(self.style.ERROR(f'Task {task_name} fail. ERROR: {error}'))
+            if enable_traceback:
+                self.stdout.write(self.style.ERROR(f'Task {task_name} fail.\nError: {error}\nTraceback: {traceback.format_exc()}'))
+            else:
+                self.stdout.write(self.style.ERROR(f'Task {task_name} fail.\nError: {error}'))
         except Exception as error:
-            self.stdout.write(self.style.ERROR(f'Task {task_name} fail. ERROR: {error}'))
+            if enable_traceback:
+                self.stdout.write(self.style.ERROR(f'Task {task_name} fail.\nError: {error}\nTraceback: {traceback.format_exc()}'))
+            else:
+                self.stdout.write(self.style.ERROR(f'Task {task_name} fail.\nError: {error}'))
